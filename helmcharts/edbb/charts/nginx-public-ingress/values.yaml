@@ -147,6 +147,7 @@ global:
   dnsService: "kube-dns"
   # -- configures DNS service namespace
   dnsNamespace: "kube-system"
+  dnsResolverIp: "10.96.0.10"
 
 commonAnnotations:
   reloader.stakater.com/auto: "true"
