@@ -1,0 +1,14 @@
+cassandra:
+  enabled: false
+elasticsearch:
+  enabled: false
+kafka:
+  enabled: false
+redis:
+  enabled: false
+postgresql:
+  enabled: false
+druid-operator:
+  enabled: true
+druid-raw-cluster:
+  enabled: true
