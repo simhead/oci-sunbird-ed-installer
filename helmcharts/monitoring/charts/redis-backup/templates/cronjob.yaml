@@ -55,7 +55,7 @@ spec:
                   bzip2 dump.rdb
                   mv dump.rdb.bz2 dump-$backup_date.rdb.bz2
                   oci os object put \
-                    --bucket-name {{ .Values.global.oci_backups_container_name }} \
+                    --bucket-name {{ .Values.global.azure_backups_container_name }} \
                     --name dump-$backup_date.rdb.bz2 \
                     --file "dump-$backup_date.rdb.bz2" \
                     --namespace {{ .Values.global.oci_bucket_namespace }}

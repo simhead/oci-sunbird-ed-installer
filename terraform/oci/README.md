@@ -1,81 +1,50 @@
-### GCP
+### OCI
 
 Follow this document if you are setting up Sunbird-Ed on GCP
 
 #### Required tools and permissions
-1. Google Cloud CLI (https://cloud.google.com/sdk/docs/install)
-2. Ensure that the user or service account running the Terraform script has the necessary privileges as [listed here](https://registry.terraform.io/providers/hashicorp/google/latest/docs/guides/provider_reference#authentication).
-
-**Note:**
-We will overwrite the following files. Please take a backup of your existing files in the following locations:
-- `~/.config/rclone/rclone.conf`
-
-### Authentication
-
-Post installation of the CLI tool and providing necessary permissions, use the following commands to login to GCP via CLI:
-
+1. OCI Account details as below:
 ```
-gcloud auth login
+  user=ocid1.user.oc1..<unique_ID>
+  fingerprint=<your_fingerprint>
+  key_file=~/.oci/oci_api_key.pem
+  tenancy=ocid1.tenancy.oc1..<unique_ID>
+  region=<e.g. us-ashburn-1>
 ```
+2. Provision OKE environment by either using [OCI OKE Terraform Intro](https://docs.oracle.com/en/learn/terraform-oci-oke-cluster/index.html#introduction) OR using Oracle's provided [landingzone](https://docs.oracle.com/en-us/iaas/Content/cloud-adoption-framework/oci-landing-zones-overview.htm) concept.
 
-Then initialize the GCP configuration:
-
+3. As ususal, copy the template directory
 ```
-gcloud init
+cd terraform/oci
+cp -r template demo
+cd demo
 ```
 
-Authenticate the application with default credentials:
+NOTE: all main's README prerequisites are needed
+
+### Redis backup Authentication
+
+This is managed by this new helm chart configmap:
 
 ```
-gcloud auth application-default login
+helmcharts/monitoring/charts/redis-backup/templates/oci-config-cm.yaml
 ```
 
-Install the GKE gcloud authentication plugin:
+### S3 Compartibility API [link](https://docs.oracle.com/en-us/iaas/Content/Object/Tasks/s3compatibleapi.htm)
 
 ```
-gcloud components install gke-gcloud-auth-plugin
+  # OCI S3 Compartible API Details
+  s3_access_key: "access key"
+  s3_secret_key: "secret key"
+  s3_secret_id: "secret id"
+  s3_endpoint: "https://<namespace>.compat.objectstorage.<region>.oraclecloud.com"
+  s3_path_style_access: "true"
+  s3_region: "e.g. us-ashburn-1"
 ```
 
-Export the project ID as an environment variable:
+### OCI Infra Setup
 
-```
-export GOOGLE_PROJECT_ID=<your_project_id>
-```
-
-Note: Make sure you select the correct project and authenticate with the appropriate credentials.
-
-### Creating infrastructure using Terraform
-
-The installer can be run on one of the following platforms:
-- Linux
-- MacOS
-- Windows (requires Git for Windows https://gitforwindows.org/)
-
-#### Required CLI tools
-1. Google Cloud CLI (https://cloud.google.com/sdk/docs/install)
-2. jq (https://jqlang.github.io/jq/download/)
-3. rclone (https://rclone.org/)
-4. Terraform (https://developer.hashicorp.com/terraform/tutorials/aws-get-started/install-cli)
-5. Terragrunt (https://terragrunt.gruntwork.io/docs/getting-started/install/)
-6. Python 3 (https://www.python.org/downloads/)
-7. PyJwt python package (https://pypi.org/project/PyJWT/)
-8. Postman CLI (https://learning.postman.com/docs/postman-cli/postman-cli-installation/)
-
-#### CLI Versions
-The installer doesn't require a specific CLI version, but we have documented the versions used and verified. If a future release of a CLI tool introduces a breaking change, it may result in installation failure. Please raise a GitHub issue if you encounter such an issue.
-
-#### Terraform Backend Setup
-
-```
-git clone https://github.com/nimbushubin/sunbird.git
-cd terraform/gcp
-gcloud auth login
-gcloud config set project <your_project_id>
-```
-
-#### GCP Infra Setup
-
-Post login, update the `terraform/gcp/<env>/global-values.yaml` file with the variables as per your environment:
+Update the `terraform/oci/<env>/global-values.yaml` file with the variables as per your environment:
 
 ```
 building_block: "" # building block name
@@ -97,20 +66,29 @@ mail_server_username: apikey
 sunbird_msg_91_auth: ""
 sunbird_msg_sender: ""
 youtube_apikey: ""
+object_storage_endpoint: "idnlppwjcf2n.compat.objectstorage.us-ashburn-1.oraclecloud.com"
+checkpoint_store_type: "s3" # oci is using aws s3-compatible API
+druid_storage_provider: "s3"
+cloud_storage_provider: "oci"
+cloud_service_provider: "oracle"
+sunbird_cloud_storage_provider: "aws" # oci is using aws s3-compatible API
+cloud_storage_region: "us-ashburn-1"
 proxy_private_key: |
  <private_key_generated_when_setting_up_ssl>
 proxy_certificate: |
  <certificate_generated_when_setting_up_ssl>
 ```
 
-Then run the following Terraform commands:
+Then run the following install commands:
 
 ```
-cd terraform/gcp/dev
-terragrunt init
-terragrunt run-all validate
-terragrunt run-all plan
-# Enter y in the next command
-terragrunt run-all apply
+cd terraform/oci/<env>
+./install.sh install_helm_components
+./install.sh restart_workloads_using_keys
+./install.sh certificate_config
+./install.sh dns_mapping
+./install.sh generate_postman_env
+./install.sh run_post_install
+./install.sh create_client_forms
 ```
 
